@@ -20,6 +20,9 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.WorldType;
+import net.minecraftforge.client.event.sound.PlaySoundEvent17;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.PlaySoundAtEntityEvent;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,6 +66,7 @@ public class LeafSmokeTest extends CommandBase {
     private volatile Boolean serverResult;
     private int serverTicks;
     private int exitTicks;
+    private volatile int receivedRustles;
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
@@ -71,6 +75,7 @@ public class LeafSmokeTest extends CommandBase {
         FMLCommonHandler.instance()
             .bus()
             .register(this);
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Mod.EventHandler
@@ -115,11 +120,18 @@ public class LeafSmokeTest extends CommandBase {
             clientResult = check(mc.thePlayer);
         }
         if (clientResult != null && serverResult != null && ++exitTicks > 60) {
+            LOG.info("AUDIO rustles received by moving player's client={}", receivedRustles);
+            clientResult = clientResult && receivedRustles > 0;
             LOG.info("SMOKE RESULT client={} server={}", clientResult, serverResult);
             mc.displayGuiScreen(new GuiMainMenu());
             mc.loadWorld(null);
             mc.shutdown();
         }
+    }
+
+    @SubscribeEvent
+    public void soundPlayed(PlaySoundEvent17 event) {
+        if (event.name.equals("step.grass") && event.sound.getVolume() == .25F) receivedRustles++;
     }
 
     @SubscribeEvent
@@ -141,6 +153,11 @@ public class LeafSmokeTest extends CommandBase {
         double pz = player.posZ;
         float step = player.stepHeight;
         float fall = player.fallDistance;
+        int ticks = player.ticksExisted;
+        double motionY = player.motionY;
+        boolean flying = player.capabilities.isFlying;
+        SoundProbe sounds = new SoundProbe(player);
+        MinecraftForge.EVENT_BUS.register(sounds);
         int x = (((int) Math.floor(px)) >> 4) * 16 + 8;
         int y = world.isRemote ? 220 : 200;
         int z = (((int) Math.floor(pz)) >> 4) * 16 + 8;
@@ -158,6 +175,7 @@ public class LeafSmokeTest extends CommandBase {
         try {
             require(!player.noClip, "player must have collision enabled");
             player.stepHeight = 0;
+            player.capabilities.isFlying = false;
             int variants = 0;
             int bop = 0;
             int forestry = 0;
@@ -194,8 +212,32 @@ public class LeafSmokeTest extends CommandBase {
                     player.moveEntity(2, 0, 0);
                     require(Math.abs(player.posX - (x + 1.5)) < .001, name + ":" + meta + " horizontal movement");
                     player.setPosition(x + .5, y + 3.1, z + .5);
+                    player.ticksExisted += 5;
+                    player.motionY = -3;
+                    int soundCount = sounds.count;
                     player.moveEntity(0, -3, 0);
                     require(Math.abs(player.posY - (y + .1)) < .001, name + ":" + meta + " falling");
+                    require(player.motionY > -3 && player.motionY < 0, name + ":" + meta + " fall braking");
+                    if (!world.isRemote) {
+                        require(sounds.count == soundCount + 1, name + ":" + meta + " falling rustle");
+                        require(sounds.name.equals(block.stepSound.getStepResourcePath()), name + " block sound");
+                    }
+                    soundCount = sounds.count;
+                    player.motionY = 0;
+                    player.moveEntity(0, 0, 0);
+                    require(sounds.count == soundCount, name + " stationary silence");
+                    player.moveEntity(.01, 0, 0);
+                    require(sounds.count == soundCount, name + " rustle cooldown");
+                    player.ticksExisted += 5;
+                    player.moveEntity(.01, 0, 0);
+                    if (!world.isRemote) require(sounds.count == soundCount + 1, name + " horizontal rustle");
+                    player.motionY = 1;
+                    player.moveEntity(0, 1, 0);
+                    require(player.motionY == 1, name + " upward movement unchanged");
+                    player.setPosition(x + .5, y + 3.1, z + .5);
+                    player.motionY = -6;
+                    player.moveEntity(0, -6, 0);
+                    require(player.motionY > -6 && player.motionY < 0, name + " fast fall through canopy");
                     require(world.getBlock(x, y, z) == block, name + " preserved");
                     variants++;
                     if (name.toLowerCase()
@@ -205,6 +247,18 @@ public class LeafSmokeTest extends CommandBase {
                 }
                 LOG.info("{} PASS {} (16 metadata values)", side, name);
             }
+            player.setPosition(x + .5, y + 3.1, z + .5);
+            player.capabilities.isFlying = true;
+            player.motionY = -3;
+            player.moveEntity(0, -3, 0);
+            require(player.motionY == -3, "creative flight must not be braked");
+            player.capabilities.isFlying = false;
+            player.setPosition(x + 2.5, y + 3.1, z + .5);
+            player.motionY = -3;
+            player.ticksExisted += 5;
+            int soundCount = sounds.count;
+            player.moveEntity(0, -3, 0);
+            require(player.motionY == -3 && sounds.count == soundCount, "air: no braking or rustle");
             world.setBlock(x, y, z, Blocks.stone, 0, 2);
             world.setBlock(x, y + 1, z, Blocks.stone, 0, 2);
             player.setPosition(x - .5, y, z + .5);
@@ -218,7 +272,12 @@ public class LeafSmokeTest extends CommandBase {
                 "stone query");
             require(variants >= 64, "vanilla and synthetic leaves tested");
             require(bop > 0 && forestry > 0, "BOP and Forestry must be loaded");
-            LOG.info("{} PASS variants={} bop={} forestry={} stone=solid", side, variants, bop, forestry);
+            LOG.info(
+                "{} PASS variants={} bop={} forestry={} stone=solid braking=pass rustle=pass",
+                side,
+                variants,
+                bop,
+                forestry);
             player.addChatMessage(
                 new ChatComponentText(
                     side + " PASS: " + variants + " leaf variants; BOP=" + bop + "; Forestry=" + forestry));
@@ -228,6 +287,7 @@ public class LeafSmokeTest extends CommandBase {
             player.addChatMessage(new ChatComponentText(side + " FAIL: " + error.getMessage()));
             return false;
         } finally {
+            MinecraftForge.EVENT_BUS.unregister(sounds);
             int index = 0;
             for (int dx = -2; dx <= 3; dx++) {
                 for (int dy = -1; dy <= 5; dy++) {
@@ -239,7 +299,29 @@ public class LeafSmokeTest extends CommandBase {
             }
             player.stepHeight = step;
             player.fallDistance = fall;
+            player.ticksExisted = ticks;
+            player.motionY = motionY;
+            player.capabilities.isFlying = flying;
             player.setPosition(px, py, pz);
+        }
+    }
+
+    public static class SoundProbe {
+
+        private final EntityPlayer player;
+        private int count;
+        private String name;
+
+        SoundProbe(EntityPlayer player) {
+            this.player = player;
+        }
+
+        @SubscribeEvent
+        public void sound(PlaySoundAtEntityEvent event) {
+            if (event.entity == player && event.volume == .25F) {
+                count++;
+                name = event.name;
+            }
         }
     }
 
