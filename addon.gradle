@@ -1,0 +1,54 @@
+sourceSets {
+    smokeTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.runtimeClasspath
+    }
+}
+
+def leafSmokeEnabled = providers.gradleProperty('leafSmokeTest').isPresent()
+if (leafSmokeEnabled) {
+    def smokeJar = tasks.register('leafSmokeTestJar', Jar) {
+        archiveFileName = 'passable-smoketest-dev.jar'
+        from sourceSets.smokeTest.output
+    }
+    def installSmoke = tasks.register('installLeafSmokeTest', Copy) {
+        from smokeJar
+        into 'run/leaf-smoke/mods'
+    }
+    tasks.named('runClient') {
+        dependsOn installSmoke
+        workingDir 'run/leaf-smoke'
+        doLast {
+            if (!file('run/leaf-smoke/logs/fml-client-latest.log').text.contains('SMOKE RESULT client=true server=true')) {
+                throw new GradleException('Leaf smoke test failed; inspect run/leaf-smoke/logs/fml-client-latest.log')
+            }
+        }
+    }
+    def obfSmokeJar = tasks.named('reobfLeafSmokeTestJar') {
+        archiveFileName = 'passable-smoketest.jar'
+    }
+    tasks.named('prepareObfModsFolder') {
+        from obfSmokeJar
+    }
+    tasks.named('runObfClient') {
+        workingDir 'run/obfuscated'
+        doLast {
+            if (!file('run/obfuscated/logs/fml-client-latest.log').text.contains('SMOKE RESULT client=true server=true')) {
+                throw new GradleException('Leaf smoke test failed; inspect run/obfuscated/logs/fml-client-latest.log')
+            }
+        }
+    }
+}
+
+if (leafSmokeEnabled || providers.gradleProperty('compatibilityMods').isPresent()) {
+    dependencies {
+        runtimeOnlyNonPublishable(rfg.deobf('maven.modrinth:biomes-o-plenty:YoWpRk0h'))
+        runtimeOnlyNonPublishable('com.github.GTNewHorizons:ForestryMC:4.11.39:dev') { transitive = false }
+        runtimeOnlyNonPublishable('com.github.GTNewHorizons:GTNHLib:0.11.48:dev')
+        runtimeOnlyNonPublishable(rfg.deobf('curse.maven:cofh-lib-220333:2388748'))
+        obfuscatedRuntimeClasspath('maven.modrinth:biomes-o-plenty:YoWpRk0h')
+        obfuscatedRuntimeClasspath('com.github.GTNewHorizons:ForestryMC:4.11.39') { transitive = false }
+        obfuscatedRuntimeClasspath('com.github.GTNewHorizons:GTNHLib:0.11.48')
+        obfuscatedRuntimeClasspath('curse.maven:cofh-lib-220333:2388748')
+    }
+}
