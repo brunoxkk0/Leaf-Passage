@@ -1,4 +1,4 @@
-package br.com.passablebackport.mixin;
+package br.dev.brunoxkk0.passablebackport.mixin;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 
-import br.com.passablebackport.PassableBackport;
+import br.dev.brunoxkk0.passablebackport.PassableBackport;
 
 @Mixin(EntityPlayerSP.class)
 public class EntityPlayerSPMixin {

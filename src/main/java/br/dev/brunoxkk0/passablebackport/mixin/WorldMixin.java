@@ -1,4 +1,4 @@
-package br.com.passablebackport.mixin;
+package br.dev.brunoxkk0.passablebackport.mixin;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 
-import br.com.passablebackport.PassableBackport;
+import br.dev.brunoxkk0.passablebackport.PassableBackport;
 
 @Mixin(World.class)
 public class WorldMixin {

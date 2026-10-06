@@ -1,11 +1,11 @@
 {
   "required": true,
   "minVersion": "0.8.5-GTNH",
-  "package": "br.com.passablebackport.mixin",
+  "package": "br.dev.brunoxkk0.passablebackport.mixin",
   "refmap": "mixins.passablebackport.refmap.json",
   "target": "@env(DEFAULT)",
   "compatibilityLevel": "JAVA_8",
-  "mixins": ["WorldMixin", "EntityMixin"],
+  "mixins": ["WorldMixin", "EntityMixin", "PathFinderMixin", "PathNavigateMixin"],
   "client": ["EntityPlayerSPMixin"],
   "server": []
 }

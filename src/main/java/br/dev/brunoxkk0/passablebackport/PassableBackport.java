@@ -1,4 +1,4 @@
-package br.com.passablebackport;
+package br.dev.brunoxkk0.passablebackport;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -10,7 +10,7 @@ import cpw.mods.fml.common.Mod;
 
 @Mod(
     modid = "passablebackport",
-    name = "Passable Backport",
+    name = "Leaf Passage",
     version = Tags.VERSION,
     acceptedMinecraftVersions = "[1.7.10]",
     dependencies = "required-after:unimixins@[0.3.1,)")

@@ -1,4 +1,4 @@
-package br.com.passablebackport;
+package br.dev.brunoxkk0.passablebackport;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -11,11 +11,16 @@ import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.passive.EntityPig;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.pathfinding.PathFinder;
+import net.minecraft.pathfinding.PathNavigate;
+import net.minecraft.pathfinding.PathPoint;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings;
@@ -34,6 +39,7 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.ReflectionHelper;
 
 @Mod(modid = "passable_smoketest", name = "Passable smoke test", version = "1")
 public class LeafSmokeTest extends CommandBase {
@@ -111,7 +117,7 @@ public class LeafSmokeTest extends CommandBase {
                 false,
                 false,
                 WorldType.FLAT).enableCommands();
-            mc.launchIntegratedServer("leaf-smoke-" + System.currentTimeMillis(), "Passable Backport test", settings);
+            mc.launchIntegratedServer("leaf-smoke-" + System.currentTimeMillis(), "Leaf Passage test", settings);
         }
         if (mc.thePlayer != null && mc.currentScreen == null
             && clientResult == null
@@ -176,6 +182,36 @@ public class LeafSmokeTest extends CommandBase {
             require(!player.noClip, "player must have collision enabled");
             player.stepHeight = 0;
             player.capabilities.isFlying = false;
+            PathNavigate navigation = new EntityPig(world).getNavigator();
+            Method clear = ReflectionHelper.findMethod(
+                PathNavigate.class,
+                navigation,
+                new String[] { "isPositionClear", "func_75496_b" },
+                int.class,
+                int.class,
+                int.class,
+                int.class,
+                int.class,
+                int.class,
+                Vec3.class,
+                double.class,
+                double.class);
+            clear.setAccessible(true);
+            Method safe = ReflectionHelper.findMethod(
+                PathNavigate.class,
+                navigation,
+                new String[] { "isSafeToStandAt", "func_75483_a" },
+                int.class,
+                int.class,
+                int.class,
+                int.class,
+                int.class,
+                int.class,
+                Vec3.class,
+                double.class,
+                double.class);
+            safe.setAccessible(true);
+            Vec3 origin = Vec3.createVectorHelper(x - .5, y, z + .5);
             int variants = 0;
             int bop = 0;
             int forestry = 0;
@@ -197,6 +233,15 @@ public class LeafSmokeTest extends CommandBase {
                         world.func_147461_a(inside)
                             .isEmpty(),
                         name + ":" + meta + " block query");
+                    require(
+                        PathFinder.func_82565_a(player, x, y, z, new PathPoint(1, 2, 1), false, false, false) == 1,
+                        name + ":" + meta + " pathfinding treats leaves as air");
+                    require(
+                        (Boolean) clear.invoke(navigation, x, y, z, 1, 2, 1, origin, 1D, 0D),
+                        name + ":" + meta + " navigation through leaves");
+                    require(
+                        !(Boolean) safe.invoke(navigation, x, y + 2, z, 1, 2, 1, origin, 1D, 0D),
+                        name + ":" + meta + " leaves cannot support navigation");
                     player.setPosition(x + .5, y + .5 - player.getEyeHeight(), z + .5);
                     player.motionX = player.motionY = player.motionZ = 0;
                     Method pushOut = Entity.class
@@ -264,6 +309,13 @@ public class LeafSmokeTest extends CommandBase {
             player.setPosition(x - .5, y, z + .5);
             player.moveEntity(2, 0, 0);
             require(player.posX < x, "stone must stop player");
+            require(
+                PathFinder.func_82565_a(player, x, y, z, new PathPoint(1, 2, 1), false, false, false) == 0,
+                "stone blocks pathfinding");
+            require(!(Boolean) clear.invoke(navigation, x, y, z, 1, 2, 1, origin, 1D, 0D), "stone blocks navigation");
+            require(
+                (Boolean) safe.invoke(navigation, x, y + 2, z, 1, 2, 1, origin, 1D, 0D),
+                "stone supports navigation");
             player.setPosition(x + .5, y + .5 - player.getEyeHeight(), z + .5);
             require(player.isEntityInsideOpaqueBlock(), "stone must remain opaque to entity checks");
             require(
