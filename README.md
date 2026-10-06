@@ -10,6 +10,8 @@ Ao atravessar folhas, jogadores emitem o som de passo do próprio bloco, no máx
 
 Seleção, quebra, drops e renderização permanecem sob responsabilidade dos blocos originais. A busca de caminhos e a navegação dos mobs tratam folhas como ar: podem atravessá-las e não tentam usá-las como chão ou degrau. Esta base não inclui encantamentos nem redução de dano de queda. A desaceleração não zera a distância de queda acumulada pelo Minecraft.
 
+Jogadores cujo corpo está dentro de folhas ficam ocultos nas verificações de visão dos monstros, mesmo com os olhos acima da folhagem. Uma perseguição corpo a corpo já iniciada continua recalculando o caminho e atravessando as folhas para buscar o alvo. A visão continua bloqueada para detectar novos alvos e para ataques que exigem linha de visão. A memória padrão da IA é preservada: tarefas que verificam visão esquecem o alvo após 60 ticks sem enxergá-lo, se não o alcançarem antes. IAs de mods que usam sua própria detecção podem ter comportamento diferente.
+
 ## Instalação
 
 Instale o JAR sem o sufixo `-dev` em `mods/`, junto com **[UniMixins 0.3.1 ou posterior](https://github.com/LegacyModdingMC/UniMixins/releases/tag/0.3.1)**. Em multiplayer, instale ambos no cliente e no servidor.

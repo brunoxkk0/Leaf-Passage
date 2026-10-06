@@ -11,8 +11,12 @@ import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ai.EntityAIAttackOnCollide;
+import net.minecraft.entity.ai.EntityAITarget;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityPig;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.pathfinding.PathFinder;
 import net.minecraft.pathfinding.PathNavigate;
@@ -324,6 +328,7 @@ public class LeafSmokeTest extends CommandBase {
                 "stone query");
             require(variants >= 64, "vanilla and synthetic leaves tested");
             require(bop > 0 && forestry > 0, "BOP and Forestry must be loaded");
+            checkConcealment(player, x, y, z);
             LOG.info(
                 "{} PASS variants={} bop={} forestry={} stone=solid braking=pass rustle=pass",
                 side,
@@ -355,6 +360,70 @@ public class LeafSmokeTest extends CommandBase {
             player.motionY = motionY;
             player.capabilities.isFlying = flying;
             player.setPosition(px, py, pz);
+        }
+    }
+
+    private static void checkConcealment(final EntityPlayer player, int x, int y, int z) {
+        World world = player.worldObj;
+        boolean invulnerable = player.capabilities.disableDamage;
+        EntityPlayerMP serverPlayer = player instanceof EntityPlayerMP ? (EntityPlayerMP) player : null;
+        WorldSettings.GameType gameType = serverPlayer == null ? null
+            : serverPlayer.theItemInWorldManager.getGameType();
+        try {
+            if (serverPlayer != null) serverPlayer.theItemInWorldManager.setGameType(WorldSettings.GameType.SURVIVAL);
+            player.capabilities.disableDamage = false;
+            for (int dx = -2; dx <= 3; dx++) {
+                world.setBlock(x + dx, y - 1, z, Blocks.stone, 0, 2);
+                world.setBlock(x + dx, y, z, Blocks.air, 0, 2);
+                world.setBlock(x + dx, y + 1, z, Blocks.air, 0, 2);
+            }
+            EntityZombie hunter = new EntityZombie(world);
+            hunter.setPosition(x - 1.5, y, z + .5);
+            hunter.onGround = true;
+            player.setPosition(x + .5, y, z + .5);
+            EntityAITarget targeting = new EntityAITarget(hunter, true) {
+
+                @Override
+                public boolean shouldExecute() {
+                    return isSuitableTarget(player, false);
+                }
+            };
+            require(hunter.canEntityBeSeen(player) && targeting.shouldExecute(), "exposed player is visible");
+            hunter.setAttackTarget(player);
+            targeting.startExecuting();
+            world.setBlock(x, y, z, Blocks.leaves, 0, 2);
+            hunter.getEntitySenses()
+                .clearSensingCache();
+            require(!hunter.canEntityBeSeen(player), "leaves hide player even with eyes above foliage");
+            require(!targeting.shouldExecute(), "hidden player cannot be acquired as a new target");
+            require(targeting.continueExecuting(), "existing hunt survives loss of sight");
+            EntityAIAttackOnCollide chase = new EntityAIAttackOnCollide(hunter, 1D, false);
+            require(chase.shouldExecute(), "hunter finds a path to hidden target");
+            chase.startExecuting();
+            hunter.getNavigator()
+                .clearPathEntity();
+            chase.updateTask();
+            require(
+                !hunter.getNavigator()
+                    .noPath(),
+                "hunter replans through leaves without seeing target");
+            hunter.moveEntity(2, 0, 0);
+            require(Math.abs(hunter.posX - player.posX) < .001, "hunter crosses leaves to reach target");
+            hunter.setPosition(x - 1.5, y, z + .5);
+            for (int tick = 1; tick < 60; tick++) {
+                require(targeting.continueExecuting(), "vanilla unseen-target memory lasts 60 ticks");
+            }
+            require(!targeting.continueExecuting(), "hunter eventually forgets unseen target");
+            world.setBlock(x, y, z, Blocks.air, 0, 2);
+            hunter.getEntitySenses()
+                .clearSensingCache();
+            require(hunter.canEntityBeSeen(player) && targeting.shouldExecute(), "leaving foliage restores visibility");
+            world.setBlock(x, y, z, Blocks.stone, 0, 2);
+            world.setBlock(x, y + 1, z, Blocks.stone, 0, 2);
+            require(!hunter.canEntityBeSeen(player), "stone still blocks sight");
+        } finally {
+            if (serverPlayer != null) serverPlayer.theItemInWorldManager.setGameType(gameType);
+            player.capabilities.disableDamage = invulnerable;
         }
     }
 
