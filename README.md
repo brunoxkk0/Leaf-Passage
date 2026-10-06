@@ -10,7 +10,7 @@ Ao atravessar folhas, jogadores emitem o som de passo do próprio bloco, no máx
 
 Seleção, quebra, drops e renderização permanecem sob responsabilidade dos blocos originais. A busca de caminhos e a navegação dos mobs tratam folhas como ar: podem atravessá-las e não tentam usá-las como chão ou degrau. Esta base não inclui encantamentos nem redução de dano de queda. A desaceleração não zera a distância de queda acumulada pelo Minecraft.
 
-Jogadores cujo corpo está dentro de folhas ficam ocultos nas verificações de visão dos monstros, mesmo com os olhos acima da folhagem. Uma perseguição corpo a corpo já iniciada continua recalculando o caminho e atravessando as folhas para buscar o alvo. A visão continua bloqueada para detectar novos alvos e para ataques que exigem linha de visão. A memória padrão da IA é preservada: tarefas que verificam visão esquecem o alvo após 60 ticks sem enxergá-lo, se não o alcançarem antes. IAs de mods que usam sua própria detecção podem ter comportamento diferente.
+Jogadores só recebem ocultação quando todos os blocos ocupados pelo corpo são folhas, incluindo cabeça e laterais. Um único bloco ou cobertura parcial não ativa essa ocultação; obstáculos na linha de visão continuam seguindo as regras do Minecraft. Perseguições já iniciadas mantêm o alvo enquanto ele está completamente nas folhas, e ataques corpo a corpo continuam recalculando o caminho para atravessá-las. Isso não libera visão para detectar novos alvos ou para ataques que exigem linha de visão. Distância máxima, morte e modo criativo continuam encerrando a perseguição pelas regras originais. Fora da cobertura completa, o tempo normal de perda de visão volta a valer. IAs de mods que usam sua própria detecção podem ter comportamento diferente.
 
 ## Instalação
 

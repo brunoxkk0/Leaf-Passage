@@ -5,7 +5,7 @@
   "refmap": "mixins.passablebackport.refmap.json",
   "target": "@env(DEFAULT)",
   "compatibilityLevel": "JAVA_8",
-  "mixins": ["WorldMixin", "EntityMixin", "PathFinderMixin", "PathNavigateMixin", "EntityLivingBaseMixin", "EntityAIAttackOnCollideMixin"],
+  "mixins": ["WorldMixin", "EntityMixin", "PathFinderMixin", "PathNavigateMixin", "EntityLivingBaseMixin", "EntityAIAttackOnCollideMixin", "EntityAITargetMixin"],
   "client": ["EntityPlayerSPMixin"],
   "server": []
 }

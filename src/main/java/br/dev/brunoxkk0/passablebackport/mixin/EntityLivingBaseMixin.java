@@ -19,7 +19,7 @@ public class EntityLivingBaseMixin {
     private void passablebackport$hidePlayerInLeaves(Entity target, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValue() && (Object) this instanceof IMob
             && target instanceof EntityPlayer
-            && PassableBackport.findLeaf(target.worldObj, target.boundingBox) != null) {
+            && PassableBackport.isFullyHiddenInLeaves(target.worldObj, target.boundingBox)) {
             cir.setReturnValue(false);
         }
     }

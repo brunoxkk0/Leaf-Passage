@@ -34,4 +34,18 @@ public class PassableBackport {
         }
         return null;
     }
+
+    public static boolean isFullyHiddenInLeaves(World world, AxisAlignedBB box) {
+        for (int x = MathHelper.floor_double(box.minX + .001); x <= MathHelper.floor_double(box.maxX - .001); x++) {
+            for (int y = MathHelper.floor_double(box.minY + .001); y <= MathHelper.floor_double(box.maxY - .001); y++) {
+                for (int z = MathHelper.floor_double(box.minZ + .001); z
+                    <= MathHelper.floor_double(box.maxZ - .001); z++) {
+                    if (!world.blockExists(x, y, z) || !isPassableLeaf(world.getBlock(x, y, z), world, x, y, z)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
 }

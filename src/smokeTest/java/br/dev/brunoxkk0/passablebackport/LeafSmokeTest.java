@@ -237,6 +237,17 @@ public class LeafSmokeTest extends CommandBase {
                         world.func_147461_a(inside)
                             .isEmpty(),
                         name + ":" + meta + " block query");
+                    require(PassableBackport.isFullyHiddenInLeaves(world, inside), name + " full body coverage");
+                    require(
+                        !PassableBackport.isFullyHiddenInLeaves(
+                            world,
+                            AxisAlignedBB.getBoundingBox(x + .1, y + .1, z + .1, x + .9, y + 2.1, z + .9)),
+                        name + " exposed head is not concealed");
+                    require(
+                        !PassableBackport.isFullyHiddenInLeaves(
+                            world,
+                            AxisAlignedBB.getBoundingBox(x + .1, y + .1, z + .1, x + 1.1, y + 1.9, z + .9)),
+                        name + " exposed side is not concealed");
                     require(
                         PathFinder.func_82565_a(player, x, y, z, new PathPoint(1, 2, 1), false, false, false) == 1,
                         name + ":" + meta + " pathfinding treats leaves as air");
@@ -380,7 +391,7 @@ public class LeafSmokeTest extends CommandBase {
             EntityZombie hunter = new EntityZombie(world);
             hunter.setPosition(x - 1.5, y, z + .5);
             hunter.onGround = true;
-            player.setPosition(x + .5, y, z + .5);
+            player.setPosition(x + .5, y + player.yOffset, z + .5);
             EntityAITarget targeting = new EntityAITarget(hunter, true) {
 
                 @Override
@@ -394,7 +405,11 @@ public class LeafSmokeTest extends CommandBase {
             world.setBlock(x, y, z, Blocks.leaves, 0, 2);
             hunter.getEntitySenses()
                 .clearSensingCache();
-            require(!hunter.canEntityBeSeen(player), "leaves hide player even with eyes above foliage");
+            require(hunter.canEntityBeSeen(player), "one leaf block does not conceal the exposed upper body");
+            world.setBlock(x, y + 1, z, Blocks.leaves, 0, 2);
+            hunter.getEntitySenses()
+                .clearSensingCache();
+            require(!hunter.canEntityBeSeen(player), "full foliage coverage hides player");
             require(!targeting.shouldExecute(), "hidden player cannot be acquired as a new target");
             require(targeting.continueExecuting(), "existing hunt survives loss of sight");
             EntityAIAttackOnCollide chase = new EntityAIAttackOnCollide(hunter, 1D, false);
@@ -410,17 +425,26 @@ public class LeafSmokeTest extends CommandBase {
             hunter.moveEntity(2, 0, 0);
             require(Math.abs(hunter.posX - player.posX) < .001, "hunter crosses leaves to reach target");
             hunter.setPosition(x - 1.5, y, z + .5);
-            for (int tick = 1; tick < 60; tick++) {
-                require(targeting.continueExecuting(), "vanilla unseen-target memory lasts 60 ticks");
+            for (int tick = 1; tick <= 120; tick++) {
+                require(targeting.continueExecuting(), "hunter retains concealed target beyond 60 ticks");
             }
-            require(!targeting.continueExecuting(), "hunter eventually forgets unseen target");
+            hunter.setPosition(x - 100, y, z + .5);
+            require(!targeting.continueExecuting(), "concealment does not bypass follow range");
+            hunter.setPosition(x - 1.5, y, z + .5);
             world.setBlock(x, y, z, Blocks.air, 0, 2);
+            world.setBlock(x, y + 1, z, Blocks.air, 0, 2);
             hunter.getEntitySenses()
                 .clearSensingCache();
             require(hunter.canEntityBeSeen(player) && targeting.shouldExecute(), "leaving foliage restores visibility");
             world.setBlock(x, y, z, Blocks.stone, 0, 2);
             world.setBlock(x, y + 1, z, Blocks.stone, 0, 2);
             require(!hunter.canEntityBeSeen(player), "stone still blocks sight");
+            hunter.getEntitySenses()
+                .clearSensingCache();
+            for (int tick = 0; tick < 60; tick++) {
+                require(targeting.continueExecuting(), "normal memory applies behind stone");
+            }
+            require(!targeting.continueExecuting(), "stone obstruction still expires target memory");
         } finally {
             if (serverPlayer != null) serverPlayer.theItemInWorldManager.setGameType(gameType);
             player.capabilities.disableDamage = invulnerable;

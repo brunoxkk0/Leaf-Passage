@@ -32,6 +32,6 @@ public class EntityAIAttackOnCollideMixin {
         Operation<Boolean> original) {
         return original.call(senses, target) || attacker instanceof IMob && target instanceof EntityPlayer
             && attacker.getAttackTarget() == target
-            && PassableBackport.findLeaf(target.worldObj, target.boundingBox) != null;
+            && PassableBackport.isFullyHiddenInLeaves(target.worldObj, target.boundingBox);
     }
 }
