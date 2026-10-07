@@ -1,4 +1,4 @@
-package br.dev.brunoxkk0.passablebackport;
+package br.dev.brunoxkk0.leafpassage;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -237,14 +237,14 @@ public class LeafSmokeTest extends CommandBase {
                         world.func_147461_a(inside)
                             .isEmpty(),
                         name + ":" + meta + " block query");
-                    require(PassableBackport.isFullyHiddenInLeaves(world, inside), name + " full body coverage");
+                    require(LeafPassage.isFullyHiddenInLeaves(world, inside), name + " full body coverage");
                     require(
-                        !PassableBackport.isFullyHiddenInLeaves(
+                        !LeafPassage.isFullyHiddenInLeaves(
                             world,
                             AxisAlignedBB.getBoundingBox(x + .1, y + .1, z + .1, x + .9, y + 2.1, z + .9)),
                         name + " exposed head is not concealed");
                     require(
-                        !PassableBackport.isFullyHiddenInLeaves(
+                        !LeafPassage.isFullyHiddenInLeaves(
                             world,
                             AxisAlignedBB.getBoundingBox(x + .1, y + .1, z + .1, x + 1.1, y + 1.9, z + .9)),
                         name + " exposed side is not concealed");

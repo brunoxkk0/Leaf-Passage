@@ -1,4 +1,4 @@
-package br.dev.brunoxkk0.passablebackport.mixin;
+package br.dev.brunoxkk0.leafpassage.mixin;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -10,16 +10,16 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import br.dev.brunoxkk0.passablebackport.PassableBackport;
+import br.dev.brunoxkk0.leafpassage.LeafPassage;
 
 @Mixin(EntityLivingBase.class)
 public class EntityLivingBaseMixin {
 
     @Inject(method = "canEntityBeSeen", at = @At("RETURN"), cancellable = true, require = 1)
-    private void passablebackport$hidePlayerInLeaves(Entity target, CallbackInfoReturnable<Boolean> cir) {
-        if (cir.getReturnValue() && (Object) this instanceof IMob
+    private void leafpassage$hidePlayerInLeaves(Entity target, CallbackInfoReturnable<Boolean> cir) {
+        if (cir.getReturnValue() && this instanceof IMob
             && target instanceof EntityPlayer
-            && PassableBackport.isFullyHiddenInLeaves(target.worldObj, target.boundingBox)) {
+            && LeafPassage.isFullyHiddenInLeaves(target.worldObj, target.boundingBox)) {
             cir.setReturnValue(false);
         }
     }

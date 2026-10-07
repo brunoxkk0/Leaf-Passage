@@ -1,4 +1,4 @@
-package br.dev.brunoxkk0.passablebackport.mixin;
+package br.dev.brunoxkk0.leafpassage.mixin;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 
-import br.dev.brunoxkk0.passablebackport.PassableBackport;
+import br.dev.brunoxkk0.leafpassage.LeafPassage;
 
 @Mixin(World.class)
 public class WorldMixin {
@@ -23,8 +23,8 @@ public class WorldMixin {
             value = "INVOKE",
             target = "Lnet/minecraft/block/Block;addCollisionBoxesToList(Lnet/minecraft/world/World;IIILnet/minecraft/util/AxisAlignedBB;Ljava/util/List;Lnet/minecraft/entity/Entity;)V"),
         require = 2)
-    private boolean passablebackport$keepCollision(Block block, World world, int x, int y, int z, AxisAlignedBB mask,
+    private boolean leafpassage$keepCollision(Block block, World world, int x, int y, int z, AxisAlignedBB mask,
         List<AxisAlignedBB> collisions, Entity entity) {
-        return !PassableBackport.isPassableLeaf(block, world, x, y, z);
+        return !LeafPassage.isPassableLeaf(block, world, x, y, z);
     }
 }

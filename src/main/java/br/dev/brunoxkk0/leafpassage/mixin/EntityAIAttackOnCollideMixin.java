@@ -1,4 +1,4 @@
-package br.dev.brunoxkk0.passablebackport.mixin;
+package br.dev.brunoxkk0.leafpassage.mixin;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 
-import br.dev.brunoxkk0.passablebackport.PassableBackport;
+import br.dev.brunoxkk0.leafpassage.LeafPassage;
 
 @Mixin(EntityAIAttackOnCollide.class)
 public class EntityAIAttackOnCollideMixin {
@@ -28,10 +28,10 @@ public class EntityAIAttackOnCollideMixin {
             value = "INVOKE",
             target = "Lnet/minecraft/entity/ai/EntitySenses;canSee(Lnet/minecraft/entity/Entity;)Z"),
         require = 1)
-    private boolean passablebackport$keepChasingHiddenTarget(EntitySenses senses, Entity target,
+    private boolean leafpassage$keepChasingHiddenTarget(EntitySenses senses, Entity target,
         Operation<Boolean> original) {
         return original.call(senses, target) || attacker instanceof IMob && target instanceof EntityPlayer
             && attacker.getAttackTarget() == target
-            && PassableBackport.isFullyHiddenInLeaves(target.worldObj, target.boundingBox);
+            && LeafPassage.isFullyHiddenInLeaves(target.worldObj, target.boundingBox);
     }
 }

@@ -1,8 +1,8 @@
 {
   "required": true,
   "minVersion": "0.8.5-GTNH",
-  "package": "br.dev.brunoxkk0.passablebackport.mixin",
-  "refmap": "mixins.passablebackport.refmap.json",
+  "package": "br.dev.brunoxkk0.leafpassage.mixin",
+  "refmap": "mixins.leafpassage.refmap.json",
   "target": "@env(DEFAULT)",
   "compatibilityLevel": "JAVA_8",
   "mixins": ["WorldMixin", "EntityMixin", "PathFinderMixin", "PathNavigateMixin", "EntityLivingBaseMixin", "EntityAIAttackOnCollideMixin", "EntityAITargetMixin"],
